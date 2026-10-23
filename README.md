@@ -1,6 +1,14 @@
 # Clearcraft
 
-A portable [Agent Skills](https://agentskills.io/specification) skill that rewrites the assistant's **final task summary** so a reader sees the outcome first, still keeps every important fact, and learns up to two useful technical terms along the way. Installation guides cover **OpenCode**, **Claude Code** and **Codex CLI**.
+An agent-agnostic [Agent Skills](https://agentskills.io/specification) skill that rewrites the assistant's **final task summary** so a reader sees the outcome first, still keeps every important fact, and learns up to two useful technical terms along the way.
+
+**Before:**
+> Implemented retry with exponential backoff. Unit tests pass; production not checked.
+
+**After:**
+> Failed requests are now retried automatically. **Exponential backoff** means multiplying the delay between attempts, so each retry waits longer.
+>
+> Unit tests pass. This has not been checked in production.
 
 - **What it is:** a Markdown-only skill (`skills/clearcraft/SKILL.md`) plus a short global instruction. No code, no dependencies, no background process, no network calls.
 - **What it does:** edits the closing summary the assistant is about to send. Outcome first, technical details separate, zero to two new terms explained.
