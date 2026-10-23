@@ -49,3 +49,23 @@ All tasks use `docs/specs/clearcraft.md`. Work on `feature/clearcraft`; no commi
 - **Files:** Reviewed repository only; no global configuration.
 - **Acceptance:** Clean staged scope, no private paths/secrets, gates addressed, approval obtained, verified public URL.
 - **Dependencies:** #1–#7, generated HTML preview from Bilbo.
+
+## Follow-up: multi-host installation documentation
+
+### 9. Multi-host README → @balin
+- **Description:** Update README with source-verified Agent Skills compliance, compatibility/evidence matrix, OpenCode/Claude Code/Codex CLI personal and project layouts, invocation and active global instruction file, safe selected-host install/update/remove guidance and host-neutral activation.
+- **Files:** `README.md` only.
+- **Acceptance:** Correct per-host syntax and official sources; Codex effective home/override handling; backups outside discovery roots; no unsupported runtime claims or changes to local Claude/Codex configuration; do not duplicate canonical skill rules.
+- **Dependencies:** Updated specification and official documentation review.
+
+### 10. Multi-host structural and shell verification → @samwise
+- **Description:** Validate Agent Skills fields, all README command syntax and disposable-home scenarios for three host layouts; record actual results and runtime limitations.
+- **Files:** `docs/evaluation.md` only (temporary harness outside repository).
+- **Acceptance:** Exact case counts; existing/collision/missing source/symlink checks; nonselected hosts preserved on update/removal; Codex home set/unset/override documented; no simulated host CLI represented as actual discovery.
+- **Dependencies:** #9.
+
+### 11. Final follow-up review and publication → lead
+- **Description:** Run Frodo and Sauron read-only gates on the expanded scope, obtain final user approval, commit only reviewed files, push reviewed branch and `main`, set the default branch to `main`.
+- **Files:** Reviewed documentation changes only; regenerated spec preview by Bilbo.
+- **Acceptance:** No secrets/private paths, correct links, truthful evidence, no publication before approval.
+- **Dependencies:** #9–#10.

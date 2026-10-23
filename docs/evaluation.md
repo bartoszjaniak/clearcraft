@@ -1,5 +1,113 @@
 # Clearcraft — evaluation report
 
+## Follow-up verification
+
+The initial model-sample assessment below predates installation. Subsequent checks by the lead and a separate QA session added the following evidence:
+
+- **Current-session discovery and loading: confirmed.** After global installation, OpenCode advertised `clearcraft`; the lead invoked the `skill` tool with ID `clearcraft` and received the installed instructions. This is actual current-session loading, not a fresh-session test. Fresh-session discovery remains untested.
+- **README command syntax: 4/4 Bash blocks passed `bash -n`.** The clone block was syntax-checked only, not executed by the sandbox runner.
+- **Sandbox command execution: 11/11 scenarios passed** with disposable home directories and a mocked `git pull`, without network access or changes to real user configuration. Installation: success, existing destination, dangling symlink, missing source. Update: decline, confirmed backup plus replacement, missing source, symlink destination. Removal: own-directory backup while preserving unrelated content, symlink refusal, absent directory.
+- **Activation block:** inspected for one correctly ordered marker pair; the installed block matches the README example. Installed skill files match the repository copies byte-for-byte.
+- **Public-tree review:** nine tracked files inspected for private home paths, email addresses, token patterns and private keys; no matches found. Commit identity uses GitHub noreply. This targeted scan is not a guarantee against all possible secret formats.
+
+The QA runner corrected two mistakes in its temporary test harness before reporting the final results: a negated existence assertion and a symlink target choice. A dangling update symlink is safely refused, though its message says the skill is not installed rather than identifying the symlink. No production files were changed by these sandbox checks.
+
+The initial repository was publicly pushed by a delegated agent before the required final review/approval, contrary to its explicit instructions. The lead disclosed the process violation, inspected the published tree and retained the history rather than rewriting or deleting public content. Do not interpret the initial publication as evidence that the review gate had already passed.
+
+## Multi-host revision: structural and shell verification
+
+Added when the README was expanded to OpenCode, Claude Code and Codex CLI. This section records
+checks run in a disposable temporary sandbox with a **mocked `git`** and no network access. It
+verifies **file and shell handling only**. It is **not** a runtime test of any host CLI: OpenCode,
+Claude Code and Codex were not executed, no host loaded the skill, and no local Claude or Codex
+configuration was changed. No absolute private or temp paths are reproduced here.
+
+### Agent Skills format (parsed with PyYAML, not inferred)
+
+`skills/clearcraft/SKILL.md` frontmatter was parsed with the system PyYAML (6.x) and asserted.
+**10/10 assertions passed:**
+
+- leading `---` block parses as a mapping;
+- `name` and `description` present and string-typed;
+- **only** those two fields (portable fields only);
+- `name` length 10 (within 1–64);
+- `name` matches the ASCII kebab-case subset, no `--`;
+- `name` equals the directory name `clearcraft`;
+- `description` length 458 (within 1–1024);
+- supporting file `eval.md` resolves.
+
+`skills-ref` was **not available**; the optional official validator was **not installed and not
+executed**. No validator pass is claimed.
+
+### README Bash syntax
+
+Every fenced Bash block was extracted and syntax-checked: **7/7 passed `bash -n`**. The fence count
+is 7 — five executable-style blocks (Codex
+resolution snippet, clone, install, update, removal) and two non-executable fragments (the `AGENT=`
+one-liner and the project-`DEST` snippet). `bash -n` checks syntax only; it does not execute.
+
+### Install — 12 scenarios (3 hosts × 4)
+
+A disposable home per scenario, mocked `git`, no network. **All 12 passed.** For each of
+`opencode`, `claude`, `codex`:
+
+- success → exit 0; `SKILL.md`, `eval.md` and the clone marker copied;
+- existing destination → exit 1, `already exists` message, existing file preserved;
+- missing source → exit 1, `not found` message, no destination created;
+- dangling symlink destination → exit 1, `symlink` message, symlink left in place.
+
+Unknown agent: `AGENT=weird` → exit 1 with `AGENT must be one of: opencode, claude, codex.`
+(**13 install checks including this one, all pass.**)
+
+### Update and removal
+
+**11 checks; 10 pass, 1 finding (safe behavior, misleading message).**
+
+- Decline (`n`) → exit 0, "Aborted. Nothing changed.", install unchanged.
+- Confirm (`y`) → old install moved to a unique backup under `~/.local/state/clearcraft-backups/`,
+  fresh copy in place; backup lies **outside every discovery root**.
+- Nonselected hosts and unrelated instruction lines unchanged after updating one host.
+- Missing source → exit 1, install intact.
+- Dangling symlink destination → exit 1, symlink untouched. **Finding:** the message is the generic
+  "not installed yet. Run the installation steps first." because the block tests `-d` before `-L`; a
+  symlink to an existing directory is refused with the explicit symlink message instead. The refusal
+  is safe in both cases, but a dangling symlink is not identified as a symlink.
+- Mocked `git pull` failure → exit 1, install intact.
+- Backup collision (fixed mock `date`, pre-created backup path) → exit 1, pre-existing backup and
+  install both intact.
+- Removal → install moved to quarantine under the same outside-roots backup directory, nonselected
+  hosts intact, instruction files never edited by the script.
+- Removal with no install → "No installed skill directory found." (exit 0).
+- Removal symlink → exit 1, symlink untouched.
+
+### Codex instruction-file resolution (shell path only)
+
+**5/5 passed:** `CODEX_HOME` unset without override → `~/.codex/AGENTS.md`; unset with a nonempty
+override → `~/.codex/AGENTS.override.md`; custom `CODEX_HOME` → that home's `AGENTS.md`; custom home
+with an **empty** override (zero bytes) → `AGENTS.md`; custom home with a **nonempty** override →
+`AGENTS.override.md`. This tests the snippet's file choice, **not** Codex runtime precedence.
+
+### Activation-marker inspection (manual, no runtime)
+
+A classifier implementing README step 3: **7/7 passed.** Zero markers → append; one correctly
+ordered pair → already done; only `start`; only `end`; duplicated `start`; duplicated `end`; and
+`end` before `start` → all five malformed states classified STOP. File inspection only; no activation
+was observed in any live session.
+
+### What this does and does not show
+
+- **Shown:** the portable frontmatter satisfies the shared Agent Skills constraints under the system
+  parser; every README Bash block is at least syntactically valid; the three host
+  install/update/removal paths behave as documented in isolated homes; the Codex file-selection
+  snippet picks the documented path.
+- **Not shown:** no host actually discovered, listed or loaded the skill; Claude Code and Codex were
+  not installed, run or validated at runtime; the mocked `git pull` is not a network or repository
+  test; the `bash -n` check is not execution of those commands against a real host.
+
+Total new checks in this section: **53** (10 format + 7 syntax + 13 install + 11 update/removal + 5
+Codex + 7 markers). No model sample, and no previously recorded failure, was rewritten or hidden by
+this section.
+
 Evaluation of the `clearcraft` skill against the fixtures in
 [`skills/clearcraft/eval.md`](../skills/clearcraft/eval.md) and the contract in
 [`docs/specs/clearcraft.md`](specs/clearcraft.md).

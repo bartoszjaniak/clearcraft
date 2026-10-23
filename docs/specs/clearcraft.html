@@ -31,12 +31,12 @@
   <main class="lg:col-span-9 p-6 md:p-10 lg:p-12 bg-[#f5f0e8]" id="spec-content">
     <section class="border-2 border-[#1a1a1a] bg-[#ffffff] p-6 md:p-8 shadow-[4px_4px_0px_#1a1a1a]">
       <h1 class="font-['Space_Grotesk'] text-2xl md:text-4xl font-bold tracking-tight mb-4 leading-tight">Clearcraft</h1>
-      <p class="font-['Inter'] text-base md:text-lg leading-relaxed text-[#1a1a1a]/90 max-w-4xl">OpenCode skill that makes final task summaries easy to understand without removing important facts. Outcome first, technical details separate, and up to two useful technical terms explained. English documentation with Polish examples, MIT-licensed public repository.</p>
+      <p class="font-['Inter'] text-base md:text-lg leading-relaxed text-[#1a1a1a]/90 max-w-4xl">Clearcraft is a portable Agent Skills skill with installation guides for OpenCode, Claude Code and Codex CLI. It makes final task summaries easy to understand without removing important facts, teaching one or two relevant technical terms when useful. English documentation with Polish examples.</p>
     </section>
 
     <section id="goal-and-rationale">
   <h2>Goal and rationale</h2>
-  <p>Clearcraft is an OpenCode skill that makes final task summaries easy to understand without removing important facts. It teaches one or two relevant technical terms when useful. It follows the language of the conversation, with English documentation and Polish examples.</p>
+  <p>Clearcraft is a portable Agent Skills skill with installation guides for OpenCode, Claude Code and Codex CLI. It makes final task summaries easy to understand without removing important facts. It teaches one or two relevant technical terms when useful. It follows the language of the conversation, with English documentation and Polish examples.</p>
 </section>
 
 <section id="problem">
@@ -65,76 +65,51 @@
 
 <section id="architectural-patterns">
   <h2>Architectural patterns</h2>
-  <p>Separate activation, reusable editing rules and evaluation cases. Markdown-only; no dependencies, background process, persistent state or network calls during ordinary use.</p>
+  <p>Separate activation, reusable editing rules and evaluation cases. Markdown-only; no dependencies, background process, persistent state or network calls during ordinary use. Follow the Agent Skills open specification for required <code>name</code> and <code>description</code> frontmatter, naming and length constraints, matching directory name and relative supporting-file references. Host-specific extensions are not required and must not be presented as portable requirements.</p>
 </section>
 
 <section id="architecture">
   <h2>Architecture</h2>
-  <p>Public repository: <a href="https://github.com/bartoszjaniak/clearcraft">github.com/bartoszjaniak/clearcraft</a>, MIT license.</p>
+  <p>Public repository: <a href="https://github.com/bartoszjaniak/clearcraft">https://github.com/bartoszjaniak/clearcraft</a>, MIT license.</p>
+  <h3>Files</h3>
   <ul>
     <li><code>skills/clearcraft/SKILL.md</code>: portable skill with ID/name <code>clearcraft</code>, trigger, workflow, pre-send check and sources.</li>
     <li><code>skills/clearcraft/eval.md</code>: concrete evaluation inputs and expected properties, read only during evaluation.</li>
-    <li><code>README.md</code>: detailed English documentation with Polish before/after examples; purpose, boundaries, installation, activation, deactivation, update/removal, compatibility, QA and sources.</li>
+    <li><code>README.md</code>: detailed English documentation with Polish before/after examples; purpose, boundaries, separate installation/activation guides for OpenCode, Claude Code and Codex CLI, deactivation, update/removal, compatibility, QA and sources.</li>
     <li><code>LICENSE</code>: standard MIT, copyright attributed to <code>bartoszjaniak</code>, no private contact information.</li>
     <li><code>docs/specs/clearcraft.md</code> and <code>.html</code>: public specification and standalone preview.</li>
     <li><code>docs/plan.md</code>: implementation plan.</li>
+    <li><code>docs/evaluation.md</code>: observed model samples, structural and command checks, with host-specific limits of evidence.</li>
     <li><code>.gitignore</code>: exclude secrets, local artifacts and editor files.</li>
   </ul>
+  <h3>Installation and activation</h3>
   <p>Install a copy of <code>skills/clearcraft/</code> in <code>~/.config/opencode/skills/clearcraft/</code>. Use copying rather than relying on unverified symlink discovery. Stop if the destination already exists; never overwrite unrelated work. Append a small activation section to global <code>~/.config/opencode/AGENTS.md</code>, preserving existing contents; do not modify OpenCode JSON or existing skills. Activation asks the main assistant to load <code>clearcraft</code> before a final task summary, unless already loaded. It does not apply to internal subagent reports, progress messages, ordinary questions, or requested artifacts such as documents and code. Disable this editing behavior with an explicit conversation or project instruction; independent reporting and safety requirements remain. Remove only the added activation section to disable globally.</p>
-  <p>Activation uses unique markers <code>&lt;!-- clearcraft:start --&gt;</code> and <code>&lt;!-- clearcraft:end --&gt;</code>; do not append a second section if these already exist.</p>
-  <figure>
-    <figcaption>Install flow: copy the skill, then activate</figcaption>
-    <svg viewBox="0 0 700 250" role="img" style="min-width:640px">
-      <defs>
-        <pattern id="bh-grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" opacity="0.2" stroke="#1a1a1a" stroke-dasharray="2,4" stroke-width="0.3"></path>
-        </pattern>
-        <marker id="bh-arrow" markerWidth="6" markerHeight="6" orient="auto-start-reverse" refX="6" refY="5" viewBox="0 0 10 10">
-          <path d="M 0 1 L 10 5 L 0 9 z" fill="#1a1a1a"></path>
-        </marker>
-      </defs>
-      <rect width="700" height="250" fill="#f5f0e8" stroke="#1a1a1a" stroke-width="2"></rect>
-      <rect width="700" height="250" fill="url(#bh-grid)"></rect>
-      <g transform="translate(30, 60)">
-        <rect width="180" height="150" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="180" height="26" fill="#1a1a1a"></rect>
-        <text x="10" y="17" fill="#ffffff" font-size="10" font-weight="bold">01 // SOURCE</text>
-        <text x="12" y="48" fill="#1a1a1a" font-size="9">• skills/clearcraft/</text>
-        <text x="12" y="68" fill="#1a1a1a" font-size="9">• SKILL.md, eval.md</text>
-        <text x="12" y="88" fill="#1a1a1a" font-size="9">• markdown-only</text>
-      </g>
-      <path d="M 210 135 L 256 135" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow)"></path>
-      <text x="233" y="124" fill="#1a1a1a" font-size="9" font-weight="bold" text-anchor="middle">copy</text>
-      <g transform="translate(260, 60)">
-        <rect width="180" height="150" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="180" height="26" fill="#0055ff"></rect>
-        <text x="10" y="17" fill="#ffffff" font-size="10" font-weight="bold">02 // INSTALL</text>
-        <text x="12" y="48" fill="#1a1a1a" font-size="9">• copy, not symlink</text>
-        <text x="12" y="68" fill="#1a1a1a" font-size="9">• stop if target exists</text>
-        <text x="12" y="88" fill="#1a1a1a" font-size="9">• ~/.config/opencode/</text>
-        <text x="12" y="108" fill="#1a1a1a" font-size="9">• skills/clearcraft/</text>
-      </g>
-      <path d="M 440 135 L 486 135" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow)"></path>
-      <text x="463" y="124" fill="#1a1a1a" font-size="9" font-weight="bold" text-anchor="middle">append</text>
-      <g transform="translate(490, 60)">
-        <rect width="180" height="150" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="180" height="26" fill="#ffcc00"></rect>
-        <text x="10" y="17" fill="#1a1a1a" font-size="10" font-weight="bold">03 // ACTIVATE</text>
-        <text x="12" y="48" fill="#1a1a1a" font-size="9">• append section to</text>
-        <text x="12" y="68" fill="#1a1a1a" font-size="9">• AGENTS.md, keep the rest</text>
-        <text x="12" y="88" fill="#1a1a1a" font-size="9">• unique start/end</text>
-        <text x="12" y="108" fill="#1a1a1a" font-size="9">• markers, no duplicates</text>
-      </g>
-    </svg>
-  </figure>
-  <p>For updates, first inspect and back up the existing installed skill outside the repository, then replace only that skill directory with a fresh copy. Do not overwrite local modifications without approval. Keep activation unchanged on update. Never remove the whole global instructions file during uninstall.</p>
+  <h3>Host guides</h3>
+  <p>Additional host guides (documentation only; do not change the user's Claude/Codex configuration):</p>
+  <table>
+    <thead><tr><th>Host</th><th>Personal skill directory</th><th>Project skill directory</th><th>Explicit invocation</th><th>Personal instructions</th></tr></thead>
+    <tbody>
+      <tr><td>OpenCode</td><td><code>~/.config/opencode/skills/clearcraft/</code></td><td><code>.opencode/skills/clearcraft/</code></td><td><code>@clearcraft</code></td><td><code>~/.config/opencode/AGENTS.md</code></td></tr>
+      <tr><td>Claude Code</td><td><code>~/.claude/skills/clearcraft/</code></td><td><code>.claude/skills/clearcraft/</code></td><td><code>/clearcraft</code></td><td><code>~/.claude/CLAUDE.md</code></td></tr>
+      <tr><td>Codex CLI</td><td><code>~/.agents/skills/clearcraft/</code></td><td><code>.agents/skills/clearcraft/</code></td><td><code>$clearcraft</code> or <code>/skills</code> selector</td><td><code>${CODEX_HOME:-$HOME/.codex}/AGENTS.md</code></td></tr>
+    </tbody>
+  </table>
+  <p>For Codex, a nonempty <code>AGENTS.override.md</code> in the effective Codex home takes precedence over <code>AGENTS.md</code>; inspect existing instructions and modify the active file manually, never remove the override. During deactivation/removal, inspect both possible files and remove only Clearcraft's marked section wherever it was actually added; a later override change must not leave a stale activation block. The skills documentation lists the personal skill root under <code>$HOME/.agents/skills</code>; the instructions documentation scopes <code>CODEX_HOME</code> to the Codex home. Do not assume changing <code>CODEX_HOME</code> moves that documented skill root; this interpretation is source-grounded, not runtime-tested here. For Claude, use its documented personal <code>CLAUDE.md</code>, not OpenCode's global <code>AGENTS.md</code>. Include a host-neutral activation block with the same markers and scope, no dependency on OpenCode's tool name. Explain project-scoped alternatives and keep personal installation as the documented default.</p>
+  <h3>Installation policy</h3>
+  <p>Use one selected host's destination per install/update/remove operation. Backups must live outside every skill discovery root, preferably <code>~/.local/state/clearcraft-backups/</code>, never inside <code>.opencode/skills</code>, <code>.claude/skills</code>, <code>.agents/skills</code> or their personal equivalents. Existing installation commands must continue working for OpenCode. Do not make three independent rule copies in the repository or add plugins, package manifests, CI, dependencies or an installer. Copying is our chosen installation policy, not a format requirement: Claude Code and Codex document symlink support; OpenCode symlink discovery was not checked. Warn that OpenCode also discovers <code>~/.claude/skills</code> and <code>~/.agents/skills</code> as compatibility locations. With duplicate IDs, native global <code>~/.config/opencode/skills</code> takes precedence over those compatibility sources; project <code>.opencode/skills</code> takes precedence over global native skills, and explicit configured skill sources can override discovery. Keep copies consistent and inspect the actual loaded path rather than assuming universal precedence across hosts.</p>
+  <p>Activation uses unique markers <code>&lt;!-- clearcraft:start --&gt;</code> and <code>&lt;!-- clearcraft:end --&gt;</code>; do not append a second section if these already exist. For updates, first inspect and back up the existing installed skill outside the repository, then replace only that skill directory with a fresh copy. Do not overwrite local modifications without approval. Keep activation unchanged on update. Never remove the whole global instructions file during uninstall.</p>
+  <h3>Development and publishing</h3>
   <p>Develop on <code>feature/clearcraft</code>. Review all public files and staged changes before committing or pushing. Use repository-local GitHub noreply commit identity to avoid disclosing a private email; do not alter global Git settings. Publish only this repository, never global configuration or private local session files. Final user approval is required before commit and public push. Create an empty remote without an auto-generated README or license; publish the approved initial commit on <code>main</code>, and retain/push the reviewed feature branch. Both branches may point to the same approved initial commit; no bootstrap commit before user approval is needed.</p>
 </section>
 
 <section id="interface">
   <h2>Interface</h2>
-  <p>Manual invocation: <code>@clearcraft</code>. Automatic use is instruction-driven, not a guaranteed runtime hook. Input is the actual task results and visible conversation; output is only the edited final summary. No user-supplied draft is needed. Applying the skill does not edit files, code, documents or quotations.</p>
-  <blockquote><strong>Example — fictional scenario, not a verification claim</strong><p>Logowanie ponownie działa po wygaśnięciu sesji. Dodałem <strong>test regresyjny</strong> — automatyczne sprawdzenie, które ma wykryć powrót tego samego błędu.</p><p>Sprawdzenie: test przeszedł. Nie sprawdzałem działania na telefonie.</p></blockquote>
+  <p>Manual invocation depends on the host: OpenCode <code>@clearcraft</code>, Claude Code <code>/clearcraft</code>, Codex CLI <code>$clearcraft</code> or the <code>/skills</code> selector. Automatic use is instruction-driven, not a guaranteed runtime hook. Input is the actual task results and visible conversation; output is only the edited final summary. No user-supplied draft is needed. Applying the skill does not edit files, code, documents or quotations.</p>
+  <blockquote>
+    <strong>Example — fictional scenario, not a verification claim</strong>
+    <p>Logowanie ponownie działa po wygaśnięciu sesji. Dodałem <strong>test regresyjny</strong> — automatyczne sprawdzenie, które ma wykryć powrót tego samego błędu.</p>
+    <p>Sprawdzenie: test przeszedł. Nie sprawdzałem działania na telefonie.</p>
+  </blockquote>
 </section>
 
 <section id="data-flow">
@@ -147,51 +122,46 @@
     <li>Send the edited summary without describing the editing process.</li>
   </ol>
   <figure>
-    <figcaption>Data flow: five steps of applying the skill</figcaption>
-    <svg viewBox="0 0 700 340" role="img" style="min-width:640px">
+    <figcaption>Data flow: applying the skill</figcaption>
+    <svg viewBox="0 0 320 300" role="img">
       <defs>
-        <pattern id="bh-grid-2" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" opacity="0.2" stroke="#1a1a1a" stroke-dasharray="2,4" stroke-width="0.3"></path>
-        </pattern>
-        <marker id="bh-arrow-2" markerWidth="6" markerHeight="6" orient="auto-start-reverse" refX="6" refY="5" viewBox="0 0 10 10">
+        <marker id="bh-arrow" markerHeight="6" markerWidth="6" orient="auto-start-reverse" refX="6" refY="5" viewBox="0 0 10 10">
           <path d="M 0 1 L 10 5 L 0 9 z" fill="#1a1a1a"></path>
         </marker>
       </defs>
-      <rect width="700" height="340" fill="#f5f0e8" stroke="#1a1a1a" stroke-width="2"></rect>
-      <rect width="700" height="340" fill="url(#bh-grid-2)"></rect>
-      <g transform="translate(30, 20)">
-        <rect width="640" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="28" height="28" fill="#ffcc00" stroke="#1a1a1a" stroke-width="1" x="8" y="8"></rect>
-        <text x="22" y="27" fill="#1a1a1a" font-size="10" font-weight="bold" text-anchor="middle">01</text>
-        <text x="46" y="27" fill="#1a1a1a" font-size="10">Finish the task and collect real results.</text>
+      <g transform="translate(40, 10)">
+        <rect width="240" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
+        <rect width="8" height="44" fill="#ffcc00"></rect>
+        <text x="18" y="19" fill="#1a1a1a" font-size="9">Finish the task and</text>
+        <text x="18" y="31" fill="#1a1a1a" font-size="9">collect real results</text>
       </g>
-      <path d="M 350 64 L 350 80" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow-2)"></path>
-      <g transform="translate(30, 82)">
-        <rect width="640" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="28" height="28" fill="#0055ff" stroke="#1a1a1a" stroke-width="1" x="8" y="8"></rect>
-        <text x="22" y="27" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">02</text>
-        <text x="46" y="27" fill="#1a1a1a" font-size="10">Load the skill when preparing the closing summary, if not already loaded.</text>
+      <path d="M 160 54 L 160 64" stroke="#1a1a1a" stroke-width="2" marker-end="url(#bh-arrow)"></path>
+      <g transform="translate(40, 70)">
+        <rect width="240" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
+        <rect width="8" height="44" fill="#0055ff"></rect>
+        <text x="18" y="19" fill="#1a1a1a" font-size="9">Load the skill when</text>
+        <text x="18" y="31" fill="#1a1a1a" font-size="9">preparing the summary</text>
       </g>
-      <path d="M 350 126 L 350 142" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow-2)"></path>
-      <g transform="translate(30, 144)">
-        <rect width="640" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="28" height="28" fill="#e63b2e" stroke="#1a1a1a" stroke-width="1" x="8" y="8"></rect>
-        <text x="22" y="27" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">03</text>
-        <text x="46" y="27" fill="#1a1a1a" font-size="10">Lead with the outcome, separate details, explain up to two new terms.</text>
+      <path d="M 160 114 L 160 124" stroke="#1a1a1a" stroke-width="2" marker-end="url(#bh-arrow)"></path>
+      <g transform="translate(40, 130)">
+        <rect width="240" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
+        <rect width="8" height="44" fill="#e63b2e"></rect>
+        <text x="18" y="19" fill="#1a1a1a" font-size="9">Outcome first, details</text>
+        <text x="18" y="31" fill="#1a1a1a" font-size="9">apart, up to two terms</text>
       </g>
-      <path d="M 350 188 L 350 204" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow-2)"></path>
-      <g transform="translate(30, 206)">
-        <rect width="640" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="28" height="28" fill="#ffcc00" stroke="#1a1a1a" stroke-width="1" x="8" y="8"></rect>
-        <text x="22" y="27" fill="#1a1a1a" font-size="10" font-weight="bold" text-anchor="middle">04</text>
-        <text x="46" y="27" fill="#1a1a1a" font-size="10">Check against evidence: preserve facts and limits, add no claims.</text>
+      <path d="M 160 174 L 160 184" stroke="#1a1a1a" stroke-width="2" marker-end="url(#bh-arrow)"></path>
+      <g transform="translate(40, 190)">
+        <rect width="240" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
+        <rect width="8" height="44" fill="#ffcc00"></rect>
+        <text x="18" y="19" fill="#1a1a1a" font-size="9">Check against evidence:</text>
+        <text x="18" y="31" fill="#1a1a1a" font-size="9">keep facts, add nothing</text>
       </g>
-      <path d="M 350 250 L 350 266" stroke="#1a1a1a" stroke-width="2.5" marker-end="url(#bh-arrow-2)"></path>
-      <g transform="translate(30, 268)">
-        <rect width="640" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
-        <rect width="28" height="28" fill="#0055ff" stroke="#1a1a1a" stroke-width="1" x="8" y="8"></rect>
-        <text x="22" y="27" fill="#ffffff" font-size="10" font-weight="bold" text-anchor="middle">05</text>
-        <text x="46" y="27" fill="#1a1a1a" font-size="10">Send the edited summary without describing the editing process.</text>
+      <path d="M 160 234 L 160 244" stroke="#1a1a1a" stroke-width="2" marker-end="url(#bh-arrow)"></path>
+      <g transform="translate(40, 250)">
+        <rect width="240" height="44" fill="#ffffff" stroke="#1a1a1a" stroke-width="2"></rect>
+        <rect width="8" height="44" fill="#0055ff"></rect>
+        <text x="18" y="19" fill="#1a1a1a" font-size="9">Send the summary silently,</text>
+        <text x="18" y="31" fill="#1a1a1a" font-size="9">no editing report</text>
       </g>
     </svg>
   </figure>
@@ -204,7 +174,11 @@
 
 <section id="testing-strategy-and-cases">
   <h2>Testing strategy and cases</h2>
+  <h3>Testing approach</h3>
   <p>There is no application build or unit-test suite. Report structural inspection, model samples and actual OpenCode discovery separately.</p>
+  <h3>Multi-host documentation validation</h3>
+  <p>For multi-host documentation, validate the shared skill against Agent Skills constraints (required frontmatter, name 1–64 characters, use the interoperable ASCII kebab-case subset for this repository, no consecutive hyphens, directory match, description 1–1024 characters, supporting files resolvable). Parse the current YAML with available PyYAML and assert these constraints without adding a dependency to the skill; <code>skills-ref validate</code> is an optional official validator, not an executed check unless actually run. Extract every fenced Bash block and run <code>bash -n</code> on each, reporting syntax separately from execution. Run selected-host install/collision/missing-source/symlink scenarios in disposable homes for all three destination layouts. Check that update/removal preserve nonselected host directories and unrelated instructions; validate README's shell selection of Codex instruction paths with <code>CODEX_HOME</code> set and unset and the nonempty override case. This verifies shell/file handling, not actual runtime precedence or discovery. Distinguish source-verified format/location claims, shell-only checks and actual host runtime loading. Do not claim Claude/Codex runtime validation or local installation if not performed.</p>
+  <h3>Evaluation cases</h3>
   <table>
     <thead><tr><th>ID</th><th>Input scenario</th><th>Required behavior</th></tr></thead>
     <tbody>
@@ -222,7 +196,8 @@
       <tr><td>S12</td><td>Skill unavailable</td><td>Do not pretend it loaded; state the limitation.</td></tr>
     </tbody>
   </table>
-  <blockquote data-tone="danger"><strong>Block on</strong><p>Invented verification, lost warnings or required facts, changed commands/paths, misleading definitions, analogy-only explanations, asking for a draft, scope leakage, changes to unrelated settings, secrets or private paths in the public repository.</p><p>Structural checks include valid frontmatter, unique path-derived ID <code>clearcraft</code>, matching metadata name and activation markers. Inspect generated HTML as well as staged content for private data.</p><p>Evaluation must specify inputs, number of actual samples, observed outputs and pass/fail rationale. A sample is not proof of reliability. Do not claim global discovery from Markdown inspection. README installation, update and removal steps must match the actual layout and preserve unrelated configuration. No dependency or CI framework is needed.</p></blockquote>
+  <h3>Blocking conditions</h3>
+  <p>Block on invented verification, lost warnings or required facts, changed commands/paths, misleading definitions, analogy-only explanations, asking for a draft, scope leakage, changes to unrelated settings, secrets or private paths in the public repository. Structural checks include valid frontmatter, unique path-derived ID <code>clearcraft</code>, matching metadata name and activation markers. Inspect generated HTML as well as staged content for private data. Evaluation must specify inputs, number of actual samples, observed outputs and pass/fail rationale. A sample is not proof of reliability. Do not claim global discovery from Markdown inspection. README installation, update and removal steps must match the actual layout and preserve unrelated configuration. No dependency or CI framework is needed.</p>
 </section>
 
 <section id="user-decisions">
@@ -233,24 +208,34 @@
     <li>Explain one or two new concepts, avoid repeating explanations in the same conversation; use analogies only if helpful.</li>
     <li>Preserve errors, risks and unperformed checks. Do not edit code, documents or other messages as part of applying the skill.</li>
     <li>Publish a new public repository with a detailed README. Approved name/account: <code>bartoszjaniak/clearcraft</code>; English README with Polish examples; MIT license. Keep the global installation requirement.</li>
+    <li>After reviewing the initial repository, the user requested installation guides for different agents and selected OpenCode, Claude Code and Codex CLI. This expands documentation and format verification; it does not authorize local installation or configuration changes for the two additional tools.</li>
   </ol>
 </section>
 
 <section id="open-questions-and-decisions">
   <h2>Open questions and decisions</h2>
-  <p>No open product questions.</p>
-  <blockquote data-tone="warn"><strong>Implementation boundary</strong><p>Model memory is limited to available context; internal agent reports are not user-facing summaries. These are implementation boundaries, not promises of persistent memory or changes to the agreed scope.</p></blockquote>
-  <p>Sources:</p>
+  <p>No open product questions. Model memory is limited to available context; internal agent reports are not user-facing summaries. These are implementation boundaries, not promises of persistent memory or changes to the agreed scope.</p>
+  <h3>Sources</h3>
   <ul>
-    <li><a href="https://www.gov.pl/web/cyfryzacja/prosty-jezyk">gov.pl — prosty język</a>: plain Polish, outcome first, explain technical terms.</li>
-    <li><a href="https://www.csun.edu/~vceed002/books/sourcebook/chapters/10-analogies/teaching-analogies.html">csun.edu — teaching analogies</a>: map relevant similarities and indicate analogy limits.</li>
-    <li><a href="https://www.w3.org/WAI/WCAG2/supplemental/patterns/o3p12-implicit-explained/">W3C — explain nonliteral meanings</a>: supplemental guidance, not a standalone WCAG conformance requirement.</li>
-    <li><a href="https://opencode.ai/v2/docs/skills">opencode.ai — skills</a>: native skill structure and discovery.</li>
-    <li><a href="https://opencode.ai/v2/docs/instructions">opencode.ai — instructions</a>: global activation guidance.</li>
+    <li><a href="https://www.gov.pl/web/cyfryzacja/prosty-jezyk">https://www.gov.pl/web/cyfryzacja/prosty-jezyk</a> — plain Polish, outcome first, explain technical terms.</li>
+    <li><a href="https://www.csun.edu/~vceed002/books/sourcebook/chapters/10-analogies/teaching-analogies.html">https://www.csun.edu/~vceed002/books/sourcebook/chapters/10-analogies/teaching-analogies.html</a> — map relevant similarities and indicate analogy limits.</li>
+    <li><a href="https://www.w3.org/WAI/WCAG2/supplemental/patterns/o3p12-implicit-explained/">https://www.w3.org/WAI/WCAG2/supplemental/patterns/o3p12-implicit-explained/</a> — explain nonliteral meanings; supplemental guidance, not a standalone WCAG conformance requirement.</li>
+    <li><a href="https://opencode.ai/v2/docs/skills">https://opencode.ai/v2/docs/skills</a> — native skill structure and discovery.</li>
+    <li><a href="https://opencode.ai/v2/docs/instructions">https://opencode.ai/v2/docs/instructions</a> — global activation guidance.</li>
+    <li><a href="https://agentskills.io/specification">https://agentskills.io/specification</a> — portable skill format and constraints.</li>
+    <li><a href="https://code.claude.com/docs/en/skills">https://code.claude.com/docs/en/skills</a> — Claude Code skill discovery and <code>/skill-name</code> invocation.</li>
+    <li><a href="https://code.claude.com/docs/en/memory">https://code.claude.com/docs/en/memory</a> — personal <code>~/.claude/CLAUDE.md</code> guidance.</li>
+    <li><a href="https://developers.openai.com/codex/build-skills">https://developers.openai.com/codex/build-skills</a> — Codex personal/project skill locations and explicit invocation.</li>
+    <li><a href="https://developers.openai.com/codex/agent-configuration/agents-md">https://developers.openai.com/codex/agent-configuration/agents-md</a> — effective Codex home and instruction override precedence.</li>
   </ul>
 </section>
 
-<section id="review-round">
+<section id="multi-host-documentation-revision">
+  <h2>Multi-host documentation revision</h2>
+  <p>The user selected the three hosts after the initial final review, before authorizing the final follow-up commit/push. Keep the previously reviewed behavior unchanged; add source-grounded installation guides, a compatibility/evidence matrix and checks of the portable format. Infrastructure consultation identified override precedence, backup discovery, duplicate IDs, and per-host path separation as the important risks. This revision awaits its targeted review before publication.</p>
+</section>
+
+<section id="review-round-1">
   <h2>Review round: 1</h2>
   <p>Supersedes the earlier local <code>plain-language-summary</code> proposal. Core behavior previously reviewed by UX and QA. Updated packaging reviewed by UX, QA and infrastructure: UX has no blockers; QA update/activation-marker checks incorporated; infrastructure empty-remote, public-history inspection and noreply guidance incorporated. The suggestion to create a bootstrap commit before review was rejected: an unborn feature branch can receive the approved initial commit and <code>main</code> can then point to it. The current revision uses a copied installation to avoid relying on unverified symlink support. Public packaging reflects the user's explicit approval of repository name, account, visibility, license and documentation language.</p>
 </section>
@@ -258,7 +243,7 @@
 
     <footer class="border-2 border-[#1a1a1a] bg-[#ffffff] p-6 shadow-[4px_4px_0px_#1a1a1a] flex flex-wrap items-center justify-between gap-4 font-['Space_Grotesk']">
       <span class="font-mono text-xs uppercase text-[#1a1a1a]/70">Clearcraft</span>
-      <a class="font-mono text-xs font-bold underline underline-offset-4 hover:bg-[#ffcc00]" href="docs/specs/clearcraft.md">Źródło: docs/specs/clearcraft.md</a>
+      <a class="font-mono text-xs font-bold underline underline-offset-4 hover:bg-[#ffcc00]" href="clearcraft.md">Źródło: clearcraft.md</a>
     </footer>
   </main>
 </div>

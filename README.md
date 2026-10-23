@@ -1,11 +1,13 @@
 # Clearcraft
 
-An [OpenCode](https://opencode.ai) skill that rewrites the assistant's **final task summary** so a reader sees the outcome first, still keeps every important fact, and learns up to two useful technical terms along the way.
+A portable [Agent Skills](https://agentskills.io/specification) skill that rewrites the assistant's **final task summary** so a reader sees the outcome first, still keeps every important fact, and learns up to two useful technical terms along the way. Installation guides cover **OpenCode**, **Claude Code** and **Codex CLI**.
 
-- **What it is:** a Markdown-only skill plus a short global instruction. No code, no dependencies, no background process, no network calls.
+- **What it is:** a Markdown-only skill (`skills/clearcraft/SKILL.md`) plus a short global instruction. No code, no dependencies, no background process, no network calls.
 - **What it does:** edits the closing summary the assistant is about to send. Outcome first, technical details separate, zero to two new terms explained.
 - **What it never does:** edit files, code, documents or quotations; touch progress messages, internal subagent reports, ordinary questions or requested artifacts; invent outcomes; hide failed checks or risks.
 - **License:** [MIT](LICENSE). Repository: `https://github.com/bartoszjaniak/clearcraft`.
+
+One skill, one rule set, one activation block. The three hosts differ only in where the skill is installed and which instruction file is edited — the rules themselves are never duplicated.
 
 > **Status:** this is documentation for a reviewed skill. There is no application build and no test suite. Behavioral evidence is collected as model samples; see [Evaluation](#evaluation).
 
@@ -160,13 +162,42 @@ clearcraft/
         └── clearcraft.html       # standalone specification preview
 ```
 
-The installed unit is a **copy** of `skills/clearcraft/` placed in `~/.config/opencode/skills/clearcraft/`. Copying is used on purpose instead of a symlink: symlink discovery is not verified for every setup, and a copy is what OpenCode is expected to find natively.
+`skills/clearcraft/` is the portable unit and the only thing installed. Its frontmatter uses just `name` and `description` — the fields every Agent Skills host understands. The `name` (`clearcraft`), its length and character set, and the matching directory name already satisfy the shared standard, so `SKILL.md` needs no host-specific extension.
+
+---
+
+## Compatibility: hosts, locations and invocation
+
+Each host finds the skill in its own directory and edits its own instruction file. Pick **one** host per install, update or removal.
+
+| Host | Personal skill directory | Project skill directory | Explicit invocation | Personal instruction file |
+| --- | --- | --- | --- | --- |
+| OpenCode | `~/.config/opencode/skills/clearcraft/` | `.opencode/skills/clearcraft/` | `@clearcraft` | `~/.config/opencode/AGENTS.md` |
+| Claude Code | `~/.claude/skills/clearcraft/` | `.claude/skills/clearcraft/` | `/clearcraft` | `~/.claude/CLAUDE.md` |
+| Codex CLI | `~/.agents/skills/clearcraft/` | `.agents/skills/clearcraft/` | `$clearcraft` or the `/skills` selector | `${CODEX_HOME:-$HOME/.codex}/AGENTS.md`, or a nonempty `AGENTS.override.md` in the same home |
+
+**OpenCode compatibility sources.** OpenCode also scans `~/.claude/skills` and `~/.agents/skills`, so a skill installed for another host may still be discovered there. With duplicate `name`s, the native `~/.config/opencode/skills` tree takes precedence over those compatibility sources; a project `.opencode/skills/` takes precedence over global native skills; and an explicitly configured skill source can override discovery. Precedence is not universal across hosts — keep your copies consistent and inspect the path that was actually loaded rather than assuming.
+
+**Codex instruction file.** In the effective Codex home, a **nonempty** `AGENTS.override.md` takes precedence over `AGENTS.md`. Resolve the file before editing instructions:
+
+```bash
+CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
+if [ -s "$CODEX_HOME/AGENTS.override.md" ]; then
+  echo "$CODEX_HOME/AGENTS.override.md"
+else
+  echo "$CODEX_HOME/AGENTS.md"
+fi
+```
+
+The skills documentation places the personal skill root at `$HOME/.agents/skills`; the instructions documentation scopes `CODEX_HOME` to the Codex home. Do not assume that changing `CODEX_HOME` moves the documented personal skill root — this is read from the sources, not runtime-tested here.
+
+**Copy versus symlink.** The guides install a **copy** of `skills/clearcraft/`. Copying is our chosen policy, not a format requirement: Claude Code and Codex document symlink support, while OpenCode's symlink discovery was not checked. A copy is what OpenCode is expected to find natively, and it keeps all three hosts working with one procedure.
 
 ---
 
 ## Installation
 
-Requirements: OpenCode installed, `git` available, and Bash on Linux or macOS. The commands use `$HOME` and are written for Bash on Linux or macOS. Nothing is piped from the network into a shell.
+Requirements: one supported host installed, `git` available, and Bash on Linux or macOS. The commands use `$HOME` and are written for Bash. Nothing is piped from the network into a shell. These are documentation-only guides — installing for Claude Code or Codex is not performed here and does not change your local configuration.
 
 ### 1. Get the files
 
@@ -181,10 +212,24 @@ git clone "https://github.com/bartoszjaniak/clearcraft" "$HOME/clearcraft"
 
 ### 2. Install the skill (copy, never overwrite)
 
-Stop if the destination already exists — a file, directory or symlink. That is a collision you must resolve manually, so nothing unrelated is destroyed. The source is checked too, and a failed copy stops instead of printing success.
+Set `AGENT` to the host you are installing for. Pick it with one line before the block — the block reads the variable in the current shell, so `export` is optional:
 
 ```bash
-DEST="$HOME/.config/opencode/skills/clearcraft"
+AGENT=claude    # or: AGENT=codex; leave unset to use the default opencode
+```
+
+Then run the block. It stops on a symlink or any existing destination — resolve that by hand so nothing unrelated is destroyed. A missing source or a failed copy also stops instead of printing success.
+
+```bash
+# Pick the host: opencode (default), claude or codex.
+AGENT="${AGENT:-opencode}"
+case "$AGENT" in
+  opencode) DEST="$HOME/.config/opencode/skills/clearcraft" ;;
+  claude)   DEST="$HOME/.claude/skills/clearcraft" ;;
+  codex)    DEST="$HOME/.agents/skills/clearcraft" ;;
+  *) echo "STOP: AGENT must be one of: opencode, claude, codex."; exit 1 ;;
+esac
+
 SRC="$HOME/clearcraft/skills/clearcraft"
 
 if [ -L "$DEST" ]; then
@@ -202,22 +247,33 @@ if [ ! -d "$SRC" ]; then
   exit 1
 fi
 
-mkdir -p "$HOME/.config/opencode/skills"
+mkdir -p "$(dirname "$DEST")"
 if ! cp -R "$SRC" "$DEST"; then
   echo "STOP: copy failed. A partial copy may remain at $DEST — inspect and remove it before retrying."
   exit 1
 fi
-echo "Installed to $DEST"
+echo "Installed $AGENT skill to $DEST"
 ```
+
+For a **project-scoped** install, supplying `DEST` from outside is not enough: the `case` assigns `DEST` itself, so your value is overwritten. In the copied block, edit the `DEST=` line of the **one** host case you selected and replace it with the absolute project root path from the table:
+
+```bash
+# inside the opencode) branch, for example:
+DEST="/absolute/path/to/repo/.opencode/skills/clearcraft"
+```
+
+The rest of the block is unchanged. Step 3 then appends the activation block to that host's **project** instructions — OpenCode `AGENTS.md` in the project, Claude Code `CLAUDE.md`, Codex `AGENTS.md` (honoring a nonempty project override if one exists). Keep **one** scope per install: a project skill directory with a project instruction file, or a personal skill directory with the personal instruction file. Mixing them creates two installs that are easy to update or remove by mistake. The `case` selector resolves only the three personal destinations — it has **no project mode**, and this guide makes no claim that it picks a project path for you.
 
 ### 3. Activate globally
 
-Append a short activation section to the global instructions file, preserving every existing line. Do this by hand: it keeps the ordered markers visible and cannot silently delete your other instructions.
+Append a short, host-neutral activation section to your host's instruction file, preserving every existing line. Do this by hand: it keeps the ordered markers visible and cannot silently delete your other instructions.
 
-1. Open `$HOME/.config/opencode/AGENTS.md` in an editor. Create it if it does not exist.
-2. Confirm it holds **exactly one** ordered pair of markers — `start` before `end`. If any marker is missing, duplicated or out of order, fix that by hand first and append nothing.
-3. If a valid ordered pair is already present, stop: activation is done.
-4. Otherwise append the block below verbatim at the end of the file, then save.
+1. Open your host's instruction file in an editor — `~/.config/opencode/AGENTS.md` (OpenCode), `~/.claude/CLAUDE.md` (Claude Code), or the effective Codex instruction file printed by the resolution snippet above. Create it if it does not exist.
+2. Count the markers `<!-- clearcraft:start -->` and `<!-- clearcraft:end -->` and act on exactly one case:
+   - **Zero markers** — no `start` and no `end`: append the block below verbatim at the end of the file, then save.
+   - **Exactly one correctly ordered pair** — one `start` followed by one `end`: activation is already done. Stop and change nothing.
+   - **Anything else** — only one of the two markers present, duplicated markers, or `end` before `start`: **STOP**. Repair the markers by hand until you have either zero markers or one correctly ordered pair, then re-check. Append nothing.
+3. Save the file.
 
 ```markdown
 <!-- clearcraft:start -->
@@ -231,14 +287,14 @@ If the skill is not available, do not pretend it loaded; say so plainly.
 <!-- clearcraft:end -->
 ```
 
-The pair is ordered: `<!-- clearcraft:start -->` first, `<!-- clearcraft:end -->` last, exactly once. The block itself states that an explicit opt-out is respected and that an unavailable skill must be reported honestly.
+The same block is used for every host: the markers are unique, the wording names no tool, and it only asks the assistant to load the skill before a final summary. The pair is ordered: `<!-- clearcraft:start -->` first, `<!-- clearcraft:end -->` last, exactly once. An explicit opt-out is respected, and an unavailable skill must be reported honestly.
 
 ---
 
 ## Activation: manual and automatic
 
-- **Manual invocation:** type `@clearcraft` in a conversation to invoke the skill directly.
-- **Automatic use:** driven by the activation instruction. It is a *request to the assistant*, not a guaranteed runtime hook. OpenCode discovers the skill natively, but whether an assistant loads and applies it in a given session is up to the model and the instructions in effect.
+- **Manual invocation** depends on the host: `@clearcraft` (OpenCode), `/clearcraft` (Claude Code), or `$clearcraft` / the `/skills` selector (Codex CLI).
+- **Automatic use** is driven by the activation instruction. It is a *request to the assistant*, not a guaranteed runtime hook. Each host discovers the skill natively when the files are in place, but whether an assistant loads and applies it in a given session is up to the model and the instructions in effect.
 
 **No behavioral guarantee.** Clearcraft cannot promise that every model, in every session, will apply the editing style. It can only make the instruction available and easy to load.
 
@@ -246,8 +302,8 @@ The pair is ordered: `<!-- clearcraft:start -->` first, `<!-- clearcraft:end -->
 
 Two different mechanisms, worth keeping apart:
 
-- **Native discovery** — OpenCode lists the skill from `~/.config/opencode/skills/clearcraft/`. This is a property of the files being in the right place.
-- **Instruction-based activation** — the global `AGENTS.md` block asks the assistant to load the skill before a final task summary. This is a behavioral instruction that depends on the model.
+- **Native discovery** — the host lists the skill from its personal skill directory. This is a property of the files being in the right place.
+- **Instruction-based activation** — the global instruction block asks the assistant to load the skill before a final task summary. This is a behavioral instruction that depends on the model.
 
 To verify discovery, **start a fresh session** and check the available skill list. If the current session's skill list is stale, it will not reflect a just-installed skill; a fresh session will. Do not claim discovery from reading the Markdown alone.
 
@@ -270,13 +326,23 @@ An opt-out removes only the receiving skill's contribution. Independent obligati
 
 ## Updating
 
-An update refreshes the checkout, shows what differs, asks for explicit confirmation, moves the installed skill to a unique backup **outside the repository**, and only then copies the fresh version in. Nothing is deleted before you confirm.
+An update refreshes the checkout, shows what differs, asks for explicit confirmation, moves the installed skill to a unique backup **outside every skill discovery root**, and only then copies the fresh version in. Nothing is deleted before you confirm.
+
+> **The block below is personal-scope only.** Its `case` resolves the three personal skill directories, so after a project-scoped install it targets the wrong place — or finds nothing at all. For a project install, edit the selected case's `DEST=` to the absolute project path exactly as in installation step 2, and inspect the host's **project** instruction file (and a nonempty Codex project override) to confirm the activation block there is still what you expect. Never run it unchanged against a machine where only a project install exists: check the resolved path before confirming, so a personal install is not updated by mistake.
 
 ```bash
-DEST="$HOME/.config/opencode/skills/clearcraft"
+# Pick the host you installed for: opencode (default), claude or codex.
+AGENT="${AGENT:-opencode}"
+case "$AGENT" in
+  opencode) DEST="$HOME/.config/opencode/skills/clearcraft" ;;
+  claude)   DEST="$HOME/.claude/skills/clearcraft" ;;
+  codex)    DEST="$HOME/.agents/skills/clearcraft" ;;
+  *) echo "STOP: AGENT must be one of: opencode, claude, codex."; exit 1 ;;
+esac
+
 CLONE="$HOME/clearcraft"
 SRC="$CLONE/skills/clearcraft"
-BACKUP="$HOME/.config/opencode/skills-backup/clearcraft-$(date +%Y%m%d-%H%M%S)"
+BACKUP="$HOME/.local/state/clearcraft-backups/$AGENT-clearcraft-$(date +%Y%m%d-%H%M%S)"
 
 if [ ! -d "$DEST" ]; then
   echo "STOP: not installed yet. Run the installation steps first."
@@ -334,7 +400,7 @@ fi
 echo "Updated $DEST (previous copy kept at $BACKUP)"
 ```
 
-`diff -rq` lists what differs, but it cannot separate your local edits from upstream changes — and a fast-forward does not fix that: a difference can still be an upstream change. Determine provenance against a known baseline, or review by hand, before merging. If the differences are your own edits, merge them by hand — do not overwrite local changes without deciding. The activation block in `AGENTS.md` is left unchanged by an update.
+`diff -rq` lists what differs, but it cannot separate your local edits from upstream changes — and a fast-forward does not fix that: a difference can still be an upstream change. Determine provenance against a known baseline, or review by hand, before merging. If the differences are your own edits, merge them by hand — do not overwrite local changes without deciding. The activation block in the instruction file is left unchanged by an update. Because the backup lives under `~/.local/state/clearcraft-backups/`, outside every discovery root, a backup copy is never picked up as an installed skill.
 
 ---
 
@@ -342,11 +408,21 @@ echo "Updated $DEST (previous copy kept at $BACKUP)"
 
 Removing Clearcraft never deletes the whole instructions file and never touches unrelated instructions. Neither step deletes anything outright: the skill directory is moved to a backup, and the activation block is removed by hand.
 
+> **The block below is personal-scope only**, like the update block: its `case` resolves the three personal skill directories. For a project-scoped install, edit the selected case's `SKILL=` to the absolute project path the same way as in installation step 2, and remove the marked section from the host's **project** instruction file (and a nonempty Codex project override if one exists) rather than the personal one — so a personal install is never moved by mistake.
+
 **1. Move the installed skill to a backup (no delete).**
 
 ```bash
-SKILL="$HOME/.config/opencode/skills/clearcraft"
-QUARANTINE="$HOME/.config/opencode/skills-backup/clearcraft-removed-$(date +%Y%m%d-%H%M%S)"
+# Pick the host you installed for: opencode (default), claude or codex.
+AGENT="${AGENT:-opencode}"
+case "$AGENT" in
+  opencode) SKILL="$HOME/.config/opencode/skills/clearcraft" ;;
+  claude)   SKILL="$HOME/.claude/skills/clearcraft" ;;
+  codex)    SKILL="$HOME/.agents/skills/clearcraft" ;;
+  *) echo "STOP: AGENT must be one of: opencode, claude, codex."; exit 1 ;;
+esac
+
+QUARANTINE="$HOME/.local/state/clearcraft-backups/$AGENT-clearcraft-removed-$(date +%Y%m%d-%H%M%S)"
 
 if [ -L "$SKILL" ]; then
   echo "STOP: $SKILL is a symlink. Inspect it and remove it yourself if you are sure."
@@ -375,10 +451,12 @@ fi
 
 Do **not** use a `sed` line range such as `/<!-- clearcraft:start -->/,/<!-- clearcraft:end -->/d`. If the closing marker is missing, the range runs to the end of the file and deletes all of your remaining instructions. Edit the file manually instead:
 
-1. Open `$HOME/.config/opencode/AGENTS.md` in an editor.
+1. Open your host's instruction file in an editor: `~/.config/opencode/AGENTS.md` (OpenCode), `~/.claude/CLAUDE.md` (Claude Code), or the effective Codex instruction file printed by the resolution snippet above.
 2. Find the two markers: `<!-- clearcraft:start -->` and `<!-- clearcraft:end -->`. Confirm there is exactly **one** correctly paired start/end pair.
 3. Delete only the lines from the start marker to the end marker, inclusive. Change nothing else.
 4. If a marker is missing or duplicated, fix the markers by hand and delete nothing else.
+
+For Codex, inspect **both** possible instruction files — `AGENTS.md` and a nonempty `AGENTS.override.md` in the effective home — and remove Clearcraft's marked section wherever it was actually added. An override may have appeared after installation, so a stale block can sit in either file; remove only the marked section and never delete a whole file.
 
 If you never activated globally, step 2 is a no-op. The file keeps all your other instructions.
 
@@ -388,11 +466,19 @@ If you never activated globally, step 2 is a no-op. The file keeps all your othe
 
 There is **no application build and no unit-test suite**. Evaluation is deliberately modest and honest:
 
-- **Structural inspection** — the files are well-formed: valid frontmatter, ID/name `clearcraft`, matching activation markers. This does not prove discovery or behavior.
+- **Structural inspection** — the files are well-formed: valid frontmatter, `name` equal to `clearcraft`, and matching activation markers. This does not prove discovery or behavior.
 - **Model samples** — each evaluation input run through a model with the skill loaded, recording the observed summary. This is the only behavioral evidence. One sample is not proof of reliability.
-- **Actual OpenCode discovery** — checking a fresh session lists the skill. Not claimed from file inspection.
+- **Skill discovery** — observation of an actual loaded skill, never claimed from file inspection.
 
-Evaluation fixtures and the shared rubric live in [`skills/clearcraft/eval.md`](skills/clearcraft/eval.md). Collected evidence, observed outcomes and limitations live in [`docs/evaluation.md`](docs/evaluation.md). An initial generated pass produced model samples; one case (S2, the multi-term input) failed on its first attempt — it dropped two provided facts (jitter and the configurable per-attempt timeout) and defined exponential backoff loosely — and the report keeps that failed attempt alongside the corrected rerun rather than hiding it. The full public specification is in [`docs/specs/clearcraft.md`](docs/specs/clearcraft.md) (preview: [`docs/specs/clearcraft.html`](docs/specs/clearcraft.html)).
+Evidence differs by host. The table records what is actually confirmed and what is only grounded in official documentation:
+
+| Host | What is confirmed | What is not claimed |
+| --- | --- | --- |
+| OpenCode | Actual current-session load confirmed: the skill is listed and the activation instruction is present. | Fresh-session discovery is untested. |
+| Claude Code | Official documentation for the skill directory, `/clearcraft` invocation and `CLAUDE.md`. README commands were shell-checked in a disposable sandbox with a mocked `git`: 12 install scenarios across the 3 hosts, 7 Bash blocks passing `bash -n`, and `SKILL.md` frontmatter parsed with the system PyYAML. The official `skills-ref` validator was not available and was not run, so no validator pass is claimed. Details in [`docs/evaluation.md`](docs/evaluation.md). | No runtime loading test. Claude Code was not installed or run on this machine; the guide is documentation only. |
+| Codex CLI | Official documentation for the skill directory, `$clearcraft` / `/skills` invocation and the instruction-file override precedence. The same sandbox shell checks cover the README commands alongside the other hosts. | No runtime loading test. Codex was not installed or run on this machine; the guide is documentation only. |
+
+Only checks that were actually run are reported here, and counts stay with the evidence in [`docs/evaluation.md`](docs/evaluation.md) rather than being restated as a total. Evaluation fixtures and the shared rubric live in [`skills/clearcraft/eval.md`](skills/clearcraft/eval.md). Collected evidence, observed outcomes and limitations live in [`docs/evaluation.md`](docs/evaluation.md). An initial generated pass produced model samples; one case (S2, the multi-term input) failed on its first attempt — it dropped two provided facts (jitter and the configurable per-attempt timeout) and defined exponential backoff loosely — and the report keeps that failed attempt alongside the corrected rerun rather than hiding it. The full public specification is in [`docs/specs/clearcraft.md`](docs/specs/clearcraft.md) (preview: [`docs/specs/clearcraft.html`](docs/specs/clearcraft.html)).
 
 ---
 
@@ -401,8 +487,13 @@ Evaluation fixtures and the shared rubric live in [`skills/clearcraft/eval.md`](
 - [Prosty język — gov.pl](https://www.gov.pl/web/cyfryzacja/prosty-jezyk) — plain Polish: outcome first, explain technical terms.
 - [Teaching analogies — CSUN](https://www.csun.edu/~vceed002/books/sourcebook/chapters/10-analogies/teaching-analogies.html) — map relevant similarities and state analogy limits.
 - [WCAG supplemental — implicit explained](https://www.w3.org/WAI/WCAG2/supplemental/patterns/o3p12-implicit-explained/) — explain nonliteral meanings; supplemental guidance, not a standalone WCAG conformance requirement.
+- [Agent Skills specification](https://agentskills.io/specification) — portable skill format and constraints.
 - [OpenCode skills](https://opencode.ai/v2/docs/skills) — native skill structure and discovery.
 - [OpenCode instructions](https://opencode.ai/v2/docs/instructions) — global activation guidance.
+- [Claude Code skills](https://code.claude.com/docs/en/skills) — personal skill discovery and `/skill-name` invocation.
+- [Claude Code memory](https://code.claude.com/docs/en/memory) — personal `~/.claude/CLAUDE.md` guidance.
+- [Codex build skills](https://developers.openai.com/codex/build-skills) — personal/project skill locations and explicit invocation.
+- [Codex AGENTS.md](https://developers.openai.com/codex/agent-configuration/agents-md) — effective Codex home and instruction override precedence.
 
 ---
 
